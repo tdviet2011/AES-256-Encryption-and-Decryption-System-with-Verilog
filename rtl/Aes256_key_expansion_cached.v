@@ -1,89 +1,152 @@
-module Aes256_key_expansion_FSM(
+`timescale 1ns / 1ps
+// ============================================================================
+// Module : Aes256_key_expansion_cached
+//   Ban nang cap cua Aes256_key_expansion_FSM: TINH KEY SCHEDULE MOT LAN MOI KHOA.
+//
+// VAN DE CUA BAN CU:
+//   Moi lan 'start' o top deu kich key_mode -> tinh lai toan bo 60 word tu dau.
+//   Ma hoa 1000 block voi cung mot khoa = 1000 lan chay lai key schedule.
+//   Hai cai gia phai tra:
+//     - Toc do : +15 chu ky moi block (voi ban masked thi it dang ke, voi ban
+//                khong mask thi 15/50 = 30% thoi gian).
+//     - Bao mat: moi lan tinh lai la MOT LAN LO DIEN them cho SPA/template.
+//                Ke tan cong gom duoc N vet do cua cung mot phep tinh se trung
+//                binh hoa nhieu di -> cang nhieu lan tinh lai cang de bi do.
+//
+// CACH LAM:
+//   Chot khoa da dung vao key_cache + co key_valid. Khi key_mode len:
+//     - key_in TRUNG key_cache va key_valid=1 -> BO QUA tinh toan, bao flag ngay
+//     - khac       -> tinh lai 13 buoc nhu cu, roi chot key_cache moi
+//
+// ---------------------------------------------------------------------------
+// DANH DOI PHAI CAN NHAC (doc ky truoc khi dung):
+//   Giu key schedule giua cac block nghia la khoa goc + 15 round key NAM LAI
+//   trong flip-flop SUOT phien lam viec, thay vi bi xoa sau moi block.
+//     - TOT hon truoc tan cong phan tich cong suat (it lan tinh lai hon).
+//     - XAU hon truoc tan cong DOC LAI thanh ghi: readback bitstream qua JTAG,
+//       scan chain, hoac cold-boot. Ban cu xoa sau moi block nen cua so doc
+//       trom rat hep; ban nay thi cua so la ca phien.
+//   => Chon theo mo hinh tan cong cua de tai:
+//        - Thiet bi co the bi cam vat ly (smartcard, IoT ngoai troi): uu tien
+//          ban CU (xoa moi block), chap nhan cham hon.
+//        - Thiet bi trong moi truong tin cay, lo ngai chinh la do cong suat:
+//          dung ban nay, VA phai keo 'zeroize' len khi ket thuc phien.
+//
+//   BAT BUOC: top phai dua 'zeroize' len 1 chu ky khi ket thuc phien lam viec
+//   (tat nguon, doi nguoi dung, het session). Neu khong bao gio keo len thi
+//   khoa nam trong FF vo thoi han.
+//
+// LUU Y NHO: bo so sanh 256-bit (key_in == key_cache) la mach to hop co dau ra
+//   phu thuoc viec HAI KHOA CO BANG NHAU hay khong (khong lo gia tri khoa).
+//   Rui ro thap, nhung neu muon sach tuyet doi thi bo so sanh di va dung mot
+//   chan 'key_load' tuong minh do phan mem dieu khien.
+// ============================================================================
+module Aes256_key_expansion_cached(
 input  wire         clk,
-input  wire         reset,
+input  wire         reset,      // Active LOW
 input  wire         key_mode,
+input  wire         clear,      // xoa state tinh toan (KHONG xoa cache khoa)
+input  wire         zeroize,    // xoa SACH: w[], khoa goc, cache -> cuoi phien
 input  wire [255:0] key_in,
 input  wire [3:0]   round_num,
 
 output reg  [127:0] round_key,
-output reg          flag
+output reg          flag,
+output reg          cache_hit   // 1 = lan nay khong phai tinh lai (de do/kiem tra)
     );
-    
+
     parameter IDLE = 2'd0;
     parameter CALC = 2'd1;
     parameter DONE = 2'd2;
-    
+
     reg [1:0]  state;
     reg [3:0]  step_cal;
     reg [5:0]  idx;
-    
+
     reg [31:0] w [0:59];
     reg [31:0] temp, w0, w1, w2, w3;
     integer i;
-    
+
+    reg [255:0] key_cache;
+    reg         key_valid;
+
+    wire key_same = key_valid && (key_in == key_cache);
+
     always @(posedge clk or negedge reset) begin
-    
-        if (!reset) begin
-        state    <= IDLE;
-        flag     <= 1'b0;
-        step_cal <= 4'd0;
-        idx      <= 6'd0;
-        for (i = 0; i < 60; i = i + 1) w[i] <= 32'd0;
-    end else begin
-            case (state) 
+        if (!reset || zeroize) begin
+            state     <= IDLE;
+            flag      <= 1'b0;
+            cache_hit <= 1'b0;
+            step_cal  <= 4'd0;
+            idx       <= 6'd0;
+            key_cache <= 256'd0;
+            key_valid <= 1'b0;
+            for (i = 0; i < 60; i = i + 1) w[i] <= 32'd0;
+        end else if (clear) begin
+            // Chi dua FSM ve cho; KHONG xoa w[] va cache (do la muc dich cua ban nay)
+            state <= IDLE;
+            flag  <= 1'b0;
+        end else begin
+            case (state)
                 IDLE : begin
-                            flag <= 1'b0;
-                       if(key_mode) begin
-                                            w[0] <= key_in[255:224]; w[1] <= key_in[223:192];
-                                            w[2] <= key_in[191:160]; w[3] <= key_in[159:128];
-                                            w[4] <= key_in[127:96];  w[5] <= key_in[95:64];
-                                            w[6] <= key_in[63:32];   w[7] <= key_in[31:0];          
-                                            step_cal <= 4'd0;
-                                            idx      <= 6'd8;
-                                            state    <= CALC;                           
-                                     end                                     
-                       end
+                    flag <= 1'b0;
+                    if (key_mode) begin
+                        if (key_same) begin
+                            // Khoa khong doi -> dung lai key schedule da co
+                            cache_hit <= 1'b1;
+                            state     <= DONE;
+                        end else begin
+                            cache_hit <= 1'b0;
+                            key_cache <= key_in;
+                            key_valid <= 1'b0;   // chi bat lai khi tinh xong
+                            w[0] <= key_in[255:224]; w[1] <= key_in[223:192];
+                            w[2] <= key_in[191:160]; w[3] <= key_in[159:128];
+                            w[4] <= key_in[127:96];  w[5] <= key_in[95:64];
+                            w[6] <= key_in[63:32];   w[7] <= key_in[31:0];
+                            step_cal <= 4'd0;
+                            idx      <= 6'd8;
+                            state    <= CALC;
+                        end
+                    end
+                end
+
                 CALC : begin
-                            if ((idx % 8) == 0)
-                                            temp = SubWordFunc(RotWord(w[idx-1])) ^ GetRcon(idx >> 3);
-                                            else if ((idx % 8) == 4)
-                                            temp = SubWordFunc(w[idx-1]);
-                                             else
-                                            temp = w[idx-1];
-                                            
-                                w0 = w[idx-8] ^ temp;
-                                w1 = w[idx-7] ^ w0;
-                                w2 = w[idx-6] ^ w1;
-                                w3 = w[idx-5] ^ w2;
-                                
-                                w[idx]   <= w0;
-                                w[idx+1] <= w1;
-                                w[idx+2] <= w2;
-                                w[idx+3] <= w3;
-                                
-                                if (step_cal == 4'd12) begin
-                                                       state <= DONE;  // Hoàn tất 13 bước
-                                                       end else begin
-                                                                    step_cal <= step_cal + 1'b1;
-                                                                    idx      <= idx + 3'd4;
-                                end
-                       end
-                       DONE: begin
-                                flag <= 1'b1; // Báo hiệu đã tạo xong khóa
-                                if (!key_mode) begin
-                                               state <= IDLE; // Quay về chờ nếu key_mode bị kéo xuống 0
-                                               end
-                             end
-            
-            default: state <= IDLE;
+                    if ((idx % 8) == 0)
+                        temp = SubWordFunc(RotWord(w[idx-1])) ^ GetRcon(idx >> 3);
+                    else if ((idx % 8) == 4)
+                        temp = SubWordFunc(w[idx-1]);
+                    else
+                        temp = w[idx-1];
+
+                    w0 = w[idx-8] ^ temp;
+                    w1 = w[idx-7] ^ w0;
+                    w2 = w[idx-6] ^ w1;
+                    w3 = w[idx-5] ^ w2;
+
+                    w[idx]   <= w0;
+                    w[idx+1] <= w1;
+                    w[idx+2] <= w2;
+                    w[idx+3] <= w3;
+
+                    if (step_cal == 4'd12) begin
+                        state <= DONE;
+                    end else begin
+                        step_cal <= step_cal + 1'b1;
+                        idx      <= idx + 3'd4;
+                    end
+                end
+
+                DONE: begin
+                    flag      <= 1'b1;
+                    key_valid <= 1'b1;            // key schedule da san sang & khop key_cache
+                    if (!key_mode) state <= IDLE;
+                end
+
+                default: state <= IDLE;
             endcase
         end
-    
     end
-    
-    
-    
-   
+
     function [31:0] SubWordFunc;
     input [31:0] word_in;
     begin
