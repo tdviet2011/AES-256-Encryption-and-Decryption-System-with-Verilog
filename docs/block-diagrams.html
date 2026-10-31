@@ -1,0 +1,737 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Sơ đồ khối AES_system</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: một cột đọc dọc; mỗi hình là một figure cuộn ngang được trên màn hẹp */
+:root{
+  --bg:#eef2f4; --surface:#ffffff; --surface2:#f6f9fa;
+  --fg:#15242d; --muted:#5b6f7b; --line:#c6d4db; --line-soft:#dde7ec;
+  --data:#0d7490; --mask:#7338cd; --key:#177a3f; --rand:#a8600a; --alert:#b4221f;
+  --f-sans:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e141a; --surface:#161e26; --surface2:#1b242d;
+  --fg:#dfeaf1; --muted:#8ba1af; --line:#2e3e49; --line-soft:#243039;
+  --data:#2ad2ec; --mask:#b98cff; --key:#4ed47f; --rand:#f0b429; --alert:#fa7d7a;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e141a; --surface:#161e26; --surface2:#1b242d;
+  --fg:#dfeaf1; --muted:#8ba1af; --line:#2e3e49; --line-soft:#243039;
+  --data:#2ad2ec; --mask:#b98cff; --key:#4ed47f; --rand:#f0b429; --alert:#fa7d7a;
+  color-scheme:dark;
+}
+
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:var(--f-sans); font-size:15px; line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:40px 72px;
+}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:44px}
+
+header{display:flex;flex-direction:column;gap:10px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{margin:0;font-size:clamp(26px,4.4vw,38px);line-height:1.15;font-weight:600;letter-spacing:-.02em;text-wrap:balance}
+header p{margin:0;max-width:62ch;color:var(--muted)}
+
+section{display:flex;flex-direction:column;gap:14px}
+h2{margin:0;font-size:clamp(18px,2.6vw,22px);font-weight:600;letter-spacing:-.01em;display:flex;flex-wrap:wrap;align-items:baseline;gap:10px}
+h2 .mono{font-family:var(--f-mono);font-size:.78em;font-weight:500;color:var(--muted)}
+section > p{margin:0;max-width:66ch}
+
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.scroll{overflow-x:auto;padding:18px}
+figure svg{display:block;max-width:100%;height:auto;color:var(--fg);min-width:640px}
+figcaption{border-top:1px solid var(--line-soft);background:var(--surface2);padding:12px 18px;font-size:13.5px;color:var(--muted)}
+figcaption b{color:var(--fg);font-weight:600}
+
+code,.mono{font-family:var(--f-mono)}
+section p code{background:var(--surface2);border:1px solid var(--line-soft);border-radius:3px;padding:1px 5px;font-size:.88em}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:20px;height:3px;border-radius:2px;display:block}
+
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+.tscroll{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:4px}
+th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--surface2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.f{font-family:var(--f-mono);white-space:nowrap;font-size:12.5px}
+
+.note{border-left:3px solid var(--alert);background:var(--surface);padding:14px 18px;border-radius:0 4px 4px 0;font-size:14px}
+.note b{color:var(--alert)}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Aes_system · Vivado · Verilog</div>
+  <h1>Sơ đồ khối AES_system</h1>
+  <p>Đọc theo thứ tự: thuật toán AES làm gì, máy trạng thái chia nó ra sao, rồi phần cứng nối với nhau thế nào, cuối cùng là giá phải trả tính bằng chu kỳ. Mọi nhãn trong hình là tên tín hiệu và tên module đúng như trong code, để bạn nhảy thẳng vào file.</p>
+  <div class="legend">
+    <span><i style="background:var(--data)"></i> đường dữ liệu</span>
+    <span><i style="background:var(--mask)"></i> đường mặt nạ</span>
+    <span><i style="background:var(--key)"></i> đường khóa</span>
+    <span><i style="background:var(--rand)"></i> randomness</span>
+    <span><i style="background:currentColor"></i> điều khiển</span>
+  </div>
+</header>
+
+<!-- ============================ THUẬT TOÁN ============================ -->
+<section>
+  <h2>1. Thuật toán AES-256 <span class="mono">14 vòng</span></h2>
+  <p>Hai cột là hai chiều, cột giữa là trạng thái FSM tương ứng trong code. Vòng 14 khác các vòng trước ở đúng một chỗ: bỏ MixColumns. Quên chi tiết này là lỗi phổ biến nhất khi tự viết AES.</p>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1160 700" role="img" aria-label="Luồng thuật toán AES-256: mã hóa và giải mã song song, kèm trạng thái FSM tương ứng">
+        <defs>
+          <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+        </defs>
+
+        <text x="250" y="18" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--muted)" text-anchor="middle">Aes_data_FSM.v — mã hóa</text>
+        <text x="910" y="18" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--muted)" text-anchor="middle">aes256_data_dec_fsm.v — giải mã</text>
+
+        <!-- ==== cột mã hóa ==== -->
+        <rect x="120" y="32" width="260" height="42" rx="3" fill="var(--surface2)" stroke="currentColor" stroke-width="1.6"/>
+        <text x="250" y="58" font-size="13" fill="currentColor" text-anchor="middle">Plaintext 128-bit</text>
+        <line x1="250" y1="76" x2="250" y2="104" stroke="currentColor" stroke-width="1.6" marker-end="url(#b1)"/>
+        <rect x="120" y="108" width="260" height="42" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.8"/>
+        <text x="250" y="134" font-size="13" fill="currentColor" text-anchor="middle">AddRoundKey(K0)</text>
+        <line x1="250" y1="152" x2="250" y2="180" stroke="currentColor" stroke-width="1.6" marker-end="url(#b1)"/>
+
+        <rect x="102" y="184" width="296" height="214" rx="4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <rect x="124" y="204" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="250" y="226" font-size="12.5" fill="currentColor" text-anchor="middle">SubBytes</text>
+        <rect x="124" y="246" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="250" y="268" font-size="12.5" fill="currentColor" text-anchor="middle">ShiftRows</text>
+        <rect x="124" y="288" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="250" y="310" font-size="12.5" fill="currentColor" text-anchor="middle">MixColumns</text>
+        <rect x="124" y="330" width="252" height="34" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.6"/>
+        <text x="250" y="352" font-size="12.5" fill="currentColor" text-anchor="middle">AddRoundKey(K r)</text>
+        <text x="250" y="386" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)" text-anchor="middle">r = 1 … 13</text>
+        <line x1="250" y1="400" x2="250" y2="430" stroke="currentColor" stroke-width="1.6" marker-end="url(#b1)"/>
+
+        <rect x="102" y="434" width="296" height="172" rx="4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <rect x="124" y="454" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="250" y="476" font-size="12.5" fill="currentColor" text-anchor="middle">SubBytes</text>
+        <rect x="124" y="496" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="250" y="518" font-size="12.5" fill="currentColor" text-anchor="middle">ShiftRows</text>
+        <rect x="124" y="538" width="252" height="34" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.6"/>
+        <text x="250" y="560" font-size="12.5" fill="currentColor" text-anchor="middle">AddRoundKey(K14)</text>
+        <text x="250" y="592" font-size="11.5" fill="var(--alert)" text-anchor="middle">vòng 14 — KHÔNG có MixColumns</text>
+        <line x1="250" y1="608" x2="250" y2="638" stroke="currentColor" stroke-width="1.6" marker-end="url(#b1)"/>
+        <rect x="120" y="642" width="260" height="42" rx="3" fill="var(--surface2)" stroke="currentColor" stroke-width="1.6"/>
+        <text x="250" y="668" font-size="13" fill="currentColor" text-anchor="middle">Ciphertext 128-bit</text>
+
+        <!-- ==== cột giải mã ==== -->
+        <rect x="780" y="32" width="260" height="42" rx="3" fill="var(--surface2)" stroke="currentColor" stroke-width="1.6"/>
+        <text x="910" y="58" font-size="13" fill="currentColor" text-anchor="middle">Ciphertext 128-bit</text>
+        <line x1="910" y1="76" x2="910" y2="104" stroke="currentColor" stroke-width="1.6" marker-end="url(#b1)"/>
+        <rect x="780" y="108" width="260" height="42" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.8"/>
+        <text x="910" y="134" font-size="13" fill="currentColor" text-anchor="middle">AddRoundKey(K14)</text>
+        <line x1="910" y1="152" x2="910" y2="180" stroke="currentColor" stroke-width="1.6" marker-end="url(#b1)"/>
+
+        <rect x="762" y="184" width="296" height="214" rx="4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <rect x="784" y="204" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="910" y="226" font-size="12.5" fill="currentColor" text-anchor="middle">InvShiftRows</text>
+        <rect x="784" y="246" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="910" y="268" font-size="12.5" fill="currentColor" text-anchor="middle">InvSubBytes</text>
+        <rect x="784" y="288" width="252" height="34" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.6"/>
+        <text x="910" y="310" font-size="12.5" fill="currentColor" text-anchor="middle">AddRoundKey(K 14−r)</text>
+        <rect x="784" y="330" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="910" y="352" font-size="12.5" fill="currentColor" text-anchor="middle">InvMixColumns</text>
+        <text x="910" y="386" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)" text-anchor="middle">r = 1 … 13</text>
+        <line x1="910" y1="400" x2="910" y2="430" stroke="currentColor" stroke-width="1.6" marker-end="url(#b1)"/>
+
+        <rect x="762" y="434" width="296" height="172" rx="4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 4"/>
+        <rect x="784" y="454" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="910" y="476" font-size="12.5" fill="currentColor" text-anchor="middle">InvShiftRows</text>
+        <rect x="784" y="496" width="252" height="34" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.4"/>
+        <text x="910" y="518" font-size="12.5" fill="currentColor" text-anchor="middle">InvSubBytes</text>
+        <rect x="784" y="538" width="252" height="34" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.6"/>
+        <text x="910" y="560" font-size="12.5" fill="currentColor" text-anchor="middle">AddRoundKey(K0)</text>
+        <text x="910" y="592" font-size="11.5" fill="var(--alert)" text-anchor="middle">vòng 14 — KHÔNG có InvMixColumns</text>
+        <line x1="910" y1="608" x2="910" y2="638" stroke="currentColor" stroke-width="1.6" marker-end="url(#b1)"/>
+        <rect x="780" y="642" width="260" height="42" rx="3" fill="var(--surface2)" stroke="currentColor" stroke-width="1.6"/>
+        <text x="910" y="668" font-size="13" fill="currentColor" text-anchor="middle">Plaintext 128-bit</text>
+
+        <!-- ==== cột giữa: trạng thái FSM ==== -->
+        <line x1="580" y1="150" x2="580" y2="650" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 5" opacity="0.5"/>
+        <rect x="508" y="108" width="144" height="42" rx="3" fill="var(--surface2)" stroke="var(--data)" stroke-width="1.6"/>
+        <text x="580" y="134" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">INIT</text>
+        <rect x="508" y="270" width="144" height="42" rx="3" fill="var(--surface2)" stroke="var(--data)" stroke-width="1.6"/>
+        <text x="580" y="296" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">ROUNDS</text>
+        <text x="580" y="332" font-size="11" fill="var(--muted)" text-anchor="middle">1 vòng = 1 chu kỳ clock</text>
+        <text x="580" y="350" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">round_num 1 → 13</text>
+        <rect x="508" y="496" width="144" height="42" rx="3" fill="var(--surface2)" stroke="var(--data)" stroke-width="1.6"/>
+        <text x="580" y="522" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">FINAL</text>
+        <rect x="508" y="642" width="144" height="42" rx="3" fill="var(--surface2)" stroke="var(--data)" stroke-width="1.6"/>
+        <text x="580" y="668" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">DONE</text>
+      </svg>
+    </div>
+    <figcaption><b>Thứ tự phép biến đổi khi giải mã không phải là đảo ngược đơn thuần.</b> Mã hóa đặt AddRoundKey ở cuối vòng, giải mã đặt ở giữa — trước InvMixColumns. Đây là hệ quả của việc InvMixColumns tuyến tính nên có thể hoán vị với AddRoundKey nếu đổi khóa tương ứng, và bản này chọn cách không đổi khóa.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ KEY EXPANSION ============================ -->
+<section>
+  <h2>2. Sinh khóa vòng <span class="mono">Aes256_key_expansion_FSM.v</span></h2>
+  <p>Khóa 256-bit cho ra 8 word đầu, rồi đệ quy đến word thứ 60. AES-256 có một nhánh mà AES-128 không có, và đó là chỗ nhiều người viết sai.</p>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1160 500" role="img" aria-label="Thuật toán key expansion AES-256: ba nhánh tính temp, đệ quy 60 word, chia thành 15 round key">
+        <defs>
+          <marker id="b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+          <marker id="b2k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--key)"/></marker>
+        </defs>
+
+        <rect x="50" y="24" width="330" height="44" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.8"/>
+        <text x="215" y="52" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="currentColor" text-anchor="middle">key[255:0] → w[0] … w[7]</text>
+        <text x="420" y="40" font-size="12" fill="var(--muted)">AES-256: Nk = 8 word, Nr = 14 vòng</text>
+        <text x="420" y="60" font-size="12" fill="var(--muted)">→ cần 4 × (14+1) = 60 word</text>
+
+        <rect x="50" y="110" width="230" height="40" rx="3" fill="var(--surface2)" stroke="currentColor" stroke-width="1.6"/>
+        <text x="165" y="136" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">temp = w[i−1]</text>
+
+        <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)" text-anchor="end">
+          <text x="322" y="115">i % 8 == 0</text>
+          <text x="322" y="171">i % 8 == 4</text>
+          <text x="322" y="227">còn lại</text>
+        </g>
+
+        <rect x="336" y="92" width="430" height="38" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.5"/>
+        <text x="551" y="116" font-size="12.5" fill="currentColor" text-anchor="middle">RotWord → SubWord → ⊕ Rcon[i ÷ 8]</text>
+        <rect x="336" y="148" width="430" height="38" rx="3" fill="var(--surface)" stroke="var(--alert)" stroke-width="1.9"/>
+        <text x="551" y="172" font-size="12.5" fill="currentColor" text-anchor="middle">SubWord</text>
+        <rect x="336" y="204" width="430" height="38" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.5"/>
+        <text x="551" y="228" font-size="12.5" fill="currentColor" text-anchor="middle">temp giữ nguyên</text>
+
+        <g stroke="currentColor" stroke-width="1.5" marker-end="url(#b2)" fill="none">
+          <polyline points="282,130 310,130 310,111 334,111"/>
+          <polyline points="310,130 310,167 334,167"/>
+          <polyline points="310,130 310,223 334,223"/>
+        </g>
+
+        <rect x="820" y="148" width="280" height="38" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.8"/>
+        <text x="960" y="172" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">w[i] = w[i−8] ⊕ temp</text>
+        <g stroke="currentColor" stroke-width="1.5" marker-end="url(#b2)" fill="none">
+          <polyline points="768,111 794,111 794,167 818,167"/>
+          <line x1="768" y1="167" x2="818" y2="167"/>
+          <polyline points="768,223 794,223 794,167 818,167"/>
+        </g>
+
+        <text x="551" y="266" font-size="11.5" fill="var(--alert)" text-anchor="middle">Nhánh i % 8 == 4 CHỈ có ở AES-256 — AES-128 không có. Code của bạn làm đúng chỗ này.</text>
+
+        <polyline points="960,190 960,312 165,312 165,154" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#b2)"/>
+        <text x="560" y="304" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)" text-anchor="middle">lặp i = 8 … 59</text>
+
+        <text x="50" y="356" font-size="12.5" fill="currentColor">60 word chia thành 15 round key, mỗi key 4 word:</text>
+        <text x="50" y="378" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--key)">round_key(r) = { w[4r], w[4r+1], w[4r+2], w[4r+3] }</text>
+
+        <g>
+          <rect x="50" y="396" width="64" height="34" rx="2" fill="var(--key)" fill-opacity="0.22" stroke="var(--key)" stroke-width="1.4"/>
+          <rect x="119" y="396" width="64" height="34" rx="2" fill="var(--key)" fill-opacity="0.22" stroke="var(--key)" stroke-width="1.4"/>
+          <rect x="188" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="257" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="326" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="395" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="464" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="533" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="602" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="671" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="740" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="809" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="878" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="947" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="1016" y="396" width="64" height="34" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        </g>
+        <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--muted)" text-anchor="middle">
+          <text x="82" y="446">K0</text><text x="151" y="446">K1</text><text x="220" y="446">K2</text>
+          <text x="289" y="446">K3</text><text x="358" y="446">K4</text><text x="427" y="446">K5</text>
+          <text x="496" y="446">K6</text><text x="565" y="446">K7</text><text x="634" y="446">K8</text>
+          <text x="703" y="446">K9</text><text x="772" y="446">K10</text><text x="841" y="446">K11</text>
+          <text x="910" y="446">K12</text><text x="979" y="446">K13</text><text x="1048" y="446">K14</text>
+        </g>
+        <text x="50" y="476" font-size="11.5" fill="var(--muted)">Hai ô tô đậm = 8 word lấy thẳng từ khóa gốc. Trong code, trạng thái CALC tính 4 word mỗi bước, 13 bước, idx = 8, 12, … 56.</text>
+      </svg>
+    </div>
+    <figcaption><b>Vì sao giải mã dùng chung khối này.</b> Round key không phụ thuộc chiều — giải mã chỉ cần lấy đúng khóa theo thứ tự ngược, nên chỉ cần đảo chỉ số <code>14−n</code> thay vì xây một khối sinh khóa thứ hai.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ FSM ============================ -->
+<section>
+  <h2>3. Máy trạng thái <span class="mono">điều khiển vòng lặp</span></h2>
+  <p>Hai FSM chạy nối tiếp: sinh khóa xong mới cho phép tính dữ liệu. Vòng lặp AES nằm ở chỗ tự quay về chính nó.</p>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1160 380" role="img" aria-label="Hai máy trạng thái: key expansion ba trạng thái và datapath năm trạng thái, mỗi cái có một vòng tự lặp">
+        <defs>
+          <marker id="b3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+        </defs>
+
+        <text x="40" y="30" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--key)">Aes256_key_expansion_FSM</text>
+        <g fill="var(--surface)" stroke="var(--key)" stroke-width="1.8">
+          <circle cx="160" cy="96" r="44"/><circle cx="420" cy="96" r="44"/><circle cx="680" cy="96" r="44"/>
+        </g>
+        <g font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">
+          <text x="160" y="101">IDLE</text><text x="420" y="101">CALC</text><text x="680" y="101">DONE</text>
+        </g>
+        <g stroke="currentColor" stroke-width="1.6" marker-end="url(#b3)" fill="none">
+          <line x1="206" y1="96" x2="374" y2="96"/>
+          <line x1="466" y1="96" x2="634" y2="96"/>
+        </g>
+        <text x="290" y="86" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">key_mode = 1</text>
+        <text x="550" y="86" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">step_cal == 12</text>
+        <path d="M402 54 C 380 2 460 2 438 54" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#b3)"/>
+        <text x="420" y="18" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">idx += 4 · 13 bước</text>
+        <path d="M680 140 C 680 178 160 178 160 140" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#b3)"/>
+        <text x="420" y="172" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">!key_mode  (hoặc clear → zeroize)</text>
+
+        <text x="40" y="216" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--data)">Aes_data_FSM / aes256_data_dec_fsm</text>
+        <g fill="var(--surface)" stroke="var(--data)" stroke-width="1.8">
+          <circle cx="120" cy="284" r="42"/><circle cx="320" cy="284" r="42"/><circle cx="540" cy="284" r="42"/>
+          <circle cx="760" cy="284" r="42"/><circle cx="960" cy="284" r="42"/>
+        </g>
+        <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" text-anchor="middle">
+          <text x="120" y="289">IDLE</text><text x="320" y="289">INIT</text><text x="540" y="289">ROUNDS</text>
+          <text x="760" y="289">FINAL</text><text x="960" y="289">DONE</text>
+        </g>
+        <g stroke="currentColor" stroke-width="1.6" marker-end="url(#b3)" fill="none">
+          <line x1="164" y1="284" x2="276" y2="284"/>
+          <line x1="364" y1="284" x2="496" y2="284"/>
+          <line x1="584" y1="284" x2="716" y2="284"/>
+          <line x1="804" y1="284" x2="916" y2="284"/>
+        </g>
+        <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">
+          <text x="220" y="274">start</text>
+          <text x="430" y="274">⊕ K0</text>
+          <text x="650" y="274">round_num == 13</text>
+          <text x="860" y="274">⊕ K14</text>
+        </g>
+        <path d="M522 242 C 500 190 580 190 558 242" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#b3)"/>
+        <text x="540" y="206" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">round_num += 1</text>
+        <path d="M960 326 C 960 364 120 364 120 326" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#b3)"/>
+        <text x="540" y="358" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">!start</text>
+      </svg>
+    </div>
+    <figcaption><b>Chỗ bản hardened khác bản gốc:</b> mỗi FSM có thêm bộ đếm vòng dự phòng đếm ngược 14 → 0. Vào FINAL mà hai bộ đếm không khớp nghĩa là có vòng bị bỏ qua — khi đó <code>fault = 1</code> và kết quả bị ép về 0 thay vì xuất ra ciphertext thiếu vòng.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ HÌNH 1 ============================ -->
+<section>
+  <h2>4. Hệ thống <span class="mono">aes256_masked_top</span></h2>
+  <p>Một khối key expansion dùng chung, một lõi masked chạy hai lần (phép chính rồi phép kiểm tra ngược). Controller giữ toàn bộ thanh ghi chốt và quyết định có cho kết quả ra hay không.</p>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1200 630" role="img" aria-label="Sơ đồ khối aes256_masked_top: controller điều khiển một khối key expansion dùng chung và một lõi masked, PRNG cấp randomness cho lõi">
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+          <marker id="a1k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--key)"/></marker>
+          <marker id="a1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--data)"/></marker>
+          <marker id="a1r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--rand)"/></marker>
+          <marker id="a1x" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--alert)"/></marker>
+        </defs>
+
+        <!-- cổng vào -->
+        <g font-family="IBM Plex Mono, monospace" font-size="12.5" fill="var(--muted)" text-anchor="end">
+          <text x="160" y="96">data_in[127:0]</text>
+          <text x="160" y="120">start</text>
+          <text x="160" y="144">mode</text>
+          <text x="160" y="300">key[255:0]</text>
+          <text x="160" y="532">seed_en</text>
+          <text x="160" y="552">seed_in[63:0]</text>
+        </g>
+        <g stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)" fill="none">
+          <line x1="168" y1="92" x2="198" y2="92"/>
+          <line x1="168" y1="116" x2="198" y2="116"/>
+          <line x1="168" y1="140" x2="198" y2="140"/>
+        </g>
+        <line x1="168" y1="296" x2="258" y2="296" stroke="var(--key)" stroke-width="2" marker-end="url(#a1k)"/>
+        <line x1="168" y1="538" x2="258" y2="538" stroke="var(--rand)" stroke-width="2" marker-end="url(#a1r)"/>
+
+        <!-- controller -->
+        <rect x="200" y="60" width="820" height="120" rx="3" fill="var(--surface2)" stroke="currentColor" stroke-width="1.8"/>
+        <text x="218" y="86" font-size="14.5" font-weight="600" fill="currentColor">Controller FSM</text>
+        <text x="352" y="86" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--muted)">Aes256_masked_top.v</text>
+        <text x="218" y="118" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="currentColor">S_IDLE → S_KEXP → S_RUN1 → S_RUN2 → S_WIPE</text>
+        <text x="218" y="142" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">chốt mode_r · data_r · res1   ·   busy · wdt · pend_ok   ·   lọc cạnh lên start</text>
+        <text x="218" y="164" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--alert)">S_RUN2 so res1 chạy ngược với data_r — lệch thì fault, data_out ép 0</text>
+
+        <!-- cổng ra -->
+        <g stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)" fill="none">
+          <line x1="1020" y1="96" x2="1056" y2="96"/>
+          <line x1="1020" y1="120" x2="1056" y2="120"/>
+          <line x1="1020" y1="144" x2="1056" y2="144"/>
+        </g>
+        <line x1="1020" y1="168" x2="1056" y2="168" stroke="var(--alert)" stroke-width="1.8" marker-end="url(#a1x)"/>
+        <g font-family="IBM Plex Mono, monospace" font-size="12.5" text-anchor="start">
+          <text x="1064" y="100" fill="var(--muted)">data_out[127:0]</text>
+          <text x="1064" y="124" fill="var(--muted)">done</text>
+          <text x="1064" y="148" fill="var(--muted)">busy</text>
+          <text x="1064" y="172" fill="var(--alert)">fault</text>
+        </g>
+
+        <!-- key expansion -->
+        <rect x="258" y="250" width="262" height="110" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.8"/>
+        <text x="274" y="276" font-size="13.5" font-weight="600" fill="currentColor">Aes256_key_expansion_FSM</text>
+        <text x="274" y="300" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">w[0..59] → 15 round key</text>
+        <text x="274" y="322" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">clear → zeroize toàn bộ</text>
+        <text x="274" y="344" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">dùng chung cho cả 2 chiều</text>
+
+        <!-- mux round num -->
+        <rect x="258" y="402" width="262" height="44" rx="3" fill="var(--surface2)" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="389" y="429" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">ke_rnum = dec ? 14−n : n</text>
+
+        <!-- masked core -->
+        <rect x="650" y="220" width="340" height="250" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="668" y="246" font-size="13.5" font-weight="600" fill="currentColor">aes_masked_core</text>
+        <text x="668" y="274" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--mask)">dstate ^ mstate = giá trị thật</text>
+        <text x="668" y="298" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">aes_masked_sbox — bảng tính lại</text>
+        <text x="668" y="320" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">ShiftRows / MixColumns ×2</text>
+        <text x="668" y="342" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">SUB 16 ck × 14 vòng</text>
+        <text x="668" y="364" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">shuffle thứ tự tra S-box</text>
+        <text x="668" y="386" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--alert)">đếm vòng kép → fault</text>
+        <text x="668" y="414" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">dec = 0 mã hóa · 1 giải mã</text>
+        <text x="668" y="444" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">chạy 2 lần mỗi phép</text>
+
+        <!-- prng -->
+        <rect x="258" y="500" width="202" height="76" rx="3" fill="var(--surface)" stroke="var(--rand)" stroke-width="1.8"/>
+        <text x="274" y="526" font-size="13.5" font-weight="600" fill="currentColor">aes_prng</text>
+        <text x="274" y="548" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">4 × LFSR 32-bit</text>
+        <text x="274" y="568" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--alert)">PHẢI thay bằng TRNG</text>
+
+        <!-- dây nối -->
+        <line x1="520" y1="282" x2="648" y2="282" stroke="var(--key)" stroke-width="2" marker-end="url(#a1k)"/>
+        <text x="584" y="274" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--key)" text-anchor="middle">round_key[127:0]</text>
+
+        <line x1="648" y1="424" x2="522" y2="424" stroke="var(--data)" stroke-width="2" marker-end="url(#a1d)"/>
+        <text x="585" y="416" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--data)" text-anchor="middle">round_num[3:0]</text>
+
+        <line x1="389" y1="400" x2="389" y2="362" stroke="var(--key)" stroke-width="2" marker-end="url(#a1k)"/>
+
+        <polyline points="462,538 820,538 820,472" fill="none" stroke="var(--rand)" stroke-width="2" marker-end="url(#a1r)"/>
+        <text x="640" y="530" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--rand)" text-anchor="middle">rnd32[31:0]</text>
+
+        <line x1="389" y1="182" x2="389" y2="248" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+        <text x="398" y="218" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">ke_mode · clear</text>
+
+        <line x1="716" y1="182" x2="716" y2="218" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+        <text x="724" y="204" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">core_go · core_dec · din</text>
+
+        <line x1="940" y1="218" x2="940" y2="182" stroke="currentColor" stroke-width="1.6" marker-end="url(#a1)"/>
+        <text x="948" y="204" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">dout · done · fault</text>
+
+        <text x="200" y="608" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">reset (active LOW, bất đồng bộ) nối tới tất cả các khối — không vẽ cho đỡ rối.</text>
+      </svg>
+    </div>
+    <figcaption><b>Vòng phản hồi quan trọng nhất:</b> lõi phát <code>round_num</code> ra, qua phép đảo chỉ số <code>14−n</code> khi giải mã, để hỏi key expansion lấy round key tương ứng. Nhờ vậy chỉ cần một khối key expansion cho cả hai chiều.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ HÌNH 2 ============================ -->
+<section>
+  <h2>5. Tầng phi tuyến <span class="mono">S_SUB — 16 chu kỳ/vòng</span></h2>
+  <p>Đây là chỗ quyết định masking sống hay chết. Giá trị thật của byte không bao giờ xuất hiện, kể cả trong một dây tổ hợp trung gian — mỗi điểm chỉ có đúng <b>một</b> phép XOR giữa giá trị đã mask và một đại lượng thuần mask.</p>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1160 400" role="img" aria-label="Luồng SubBytes có mặt nạ: dstate và corr tách byte theo thứ tự ngẫu nhiên, XOR một lần để ra địa chỉ, tra bảng S-box đã mask, rồi đổi sang mặt nạ mới">
+        <defs>
+          <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+          <marker id="a2d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--data)"/></marker>
+          <marker id="a2m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--mask)"/></marker>
+          <marker id="a2r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--rand)"/></marker>
+        </defs>
+
+        <!-- lane dữ liệu -->
+        <rect x="26" y="56" width="170" height="50" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="111" y="78" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="currentColor" text-anchor="middle">dstate[127:0]</text>
+        <text x="111" y="96" font-size="11" fill="var(--muted)" text-anchor="middle">dữ liệu đã mask</text>
+
+        <rect x="236" y="56" width="152" height="50" rx="3" fill="var(--surface2)" stroke="var(--data)" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="312" y="80" font-size="11.5" fill="currentColor" text-anchor="middle">InvShiftRows</text>
+        <text x="312" y="96" font-size="10.5" fill="var(--muted)" text-anchor="middle">chỉ khi dec = 1</text>
+
+        <rect x="428" y="56" width="104" height="50" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.6"/>
+        <text x="480" y="86" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">byte j</text>
+
+        <!-- lane mặt nạ -->
+        <rect x="26" y="216" width="170" height="50" rx="3" fill="var(--surface)" stroke="var(--mask)" stroke-width="1.8"/>
+        <text x="111" y="238" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="currentColor" text-anchor="middle">corr[127:0]</text>
+        <text x="111" y="256" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--muted)" text-anchor="middle">= mstate ^ {16{mi}}</text>
+
+        <rect x="236" y="216" width="152" height="50" rx="3" fill="var(--surface2)" stroke="var(--mask)" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <text x="312" y="240" font-size="11.5" fill="currentColor" text-anchor="middle">InvShiftRows</text>
+        <text x="312" y="256" font-size="10.5" fill="var(--muted)" text-anchor="middle">chỉ khi dec = 1</text>
+
+        <rect x="428" y="216" width="104" height="50" rx="3" fill="var(--surface)" stroke="var(--mask)" stroke-width="1.6"/>
+        <text x="480" y="246" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">byte j</text>
+
+        <!-- shuffle -->
+        <rect x="372" y="312" width="268" height="46" rx="3" fill="var(--surface)" stroke="var(--rand)" stroke-width="1.6"/>
+        <text x="506" y="332" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">j = (cnt4 + shuf_a) ^ shuf_x</text>
+        <text x="506" y="349" font-size="10.5" fill="var(--muted)" text-anchor="middle">hoán vị 0..15 — thứ tự tra ngẫu nhiên</text>
+        <line x1="480" y1="310" x2="480" y2="270" stroke="var(--rand)" stroke-width="1.6" marker-end="url(#a2r)"/>
+        <line x1="462" y1="310" x2="462" y2="110" stroke="var(--rand)" stroke-width="1.6" marker-end="url(#a2r)"/>
+
+        <!-- XOR 1 -->
+        <circle cx="612" cy="161" r="19" fill="var(--surface)" stroke="currentColor" stroke-width="1.8"/>
+        <text x="612" y="167" font-size="17" fill="currentColor" text-anchor="middle">⊕</text>
+        <polyline points="534,81 574,81 574,161 591,161" fill="none" stroke="var(--data)" stroke-width="1.8" marker-end="url(#a2d)"/>
+        <polyline points="534,241 574,241 574,161 591,161" fill="none" stroke="var(--mask)" stroke-width="1.8" marker-end="url(#a2m)"/>
+
+        <!-- bảng -->
+        <rect x="676" y="121" width="212" height="80" rx="3" fill="var(--surface)" stroke="currentColor" stroke-width="1.8"/>
+        <text x="782" y="146" font-size="13" font-weight="600" fill="currentColor" text-anchor="middle">aes_masked_sbox</text>
+        <text x="782" y="168" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" text-anchor="middle">T[a] = S[a ^ mi] ^ mo</text>
+        <text x="782" y="188" font-size="10.5" fill="var(--muted)" text-anchor="middle">RAM 256×8, tính lại mỗi lần mã hóa</text>
+        <line x1="633" y1="161" x2="674" y2="161" stroke="currentColor" stroke-width="1.8" marker-end="url(#a2)"/>
+        <text x="653" y="152" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">taddr</text>
+
+        <!-- XOR 2 -->
+        <circle cx="948" cy="161" r="19" fill="var(--surface)" stroke="currentColor" stroke-width="1.8"/>
+        <text x="948" y="167" font-size="17" fill="currentColor" text-anchor="middle">⊕</text>
+        <line x1="890" y1="161" x2="927" y2="161" stroke="currentColor" stroke-width="1.8" marker-end="url(#a2)"/>
+        <text x="908" y="152" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)" text-anchor="middle">tdout</text>
+
+        <!-- randomness -->
+        <rect x="628" y="312" width="416" height="46" rx="3" fill="var(--surface)" stroke="var(--rand)" stroke-width="1.6"/>
+        <text x="836" y="332" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor" text-anchor="middle">nm_r = rnd32[7:0]      omc_r = mo ^ nm_r</text>
+        <text x="836" y="349" font-size="10.5" fill="var(--muted)" text-anchor="middle">cả hai chốt trước 1 chu kỳ — chỉ chứa mask, không chứa bí mật</text>
+        <line x1="948" y1="310" x2="948" y2="184" stroke="var(--rand)" stroke-width="1.6" marker-end="url(#a2r)"/>
+        <polyline points="1020,310 1020,262" fill="none" stroke="var(--rand)" stroke-width="1.6" marker-end="url(#a2r)"/>
+
+        <!-- kết quả -->
+        <rect x="986" y="56" width="150" height="50" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="1061" y="79" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="currentColor" text-anchor="middle">subd[j]</text>
+        <text x="1061" y="96" font-size="10.5" fill="var(--muted)" text-anchor="middle">S[x] ^ nm_r</text>
+        <polyline points="969,161 1000,161 1000,110" fill="none" stroke="var(--data)" stroke-width="1.8" marker-end="url(#a2d)"/>
+
+        <rect x="986" y="216" width="150" height="50" rx="3" fill="var(--surface)" stroke="var(--mask)" stroke-width="1.8"/>
+        <text x="1061" y="239" font-family="IBM Plex Mono, monospace" font-size="12.5" fill="currentColor" text-anchor="middle">subm[j]</text>
+        <text x="1061" y="256" font-size="10.5" fill="var(--muted)" text-anchor="middle">= nm_r</text>
+      </svg>
+    </div>
+    <figcaption><b>Hai chỗ không được để synthesis gộp lại.</b> Nếu tool tính <code>dstate[j] ^ mstate[j]</code> trước rồi mới XOR <code>mi</code>, kết quả trung gian chính là byte thật. Tương tự nếu nó tính <code>tdout ^ mo</code> trước <code>nm_r</code>. Vì vậy <code>corr</code> và <code>omc_r</code> là thanh ghi đánh <code>dont_touch</code>, không phải dây tổ hợp.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ HÌNH 3 ============================ -->
+<section>
+  <h2>6. Tầng tuyến tính <span class="mono">S_LIN — 1 chu kỳ/vòng</span></h2>
+  <p>MixColumns tuyến tính nên <code>MC(d) = MC(thật) ^ MC(mask)</code>. Đó là lý do phải chạy thêm một bản MixColumns trên đường mặt nạ — chi phí diện tích lớn nhất của bản masked.</p>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1160 410" role="img" aria-label="Tầng tuyến tính: lane mã hóa, lane giải mã và lane mặt nạ chạy song song qua ShiftRows và MixColumns">
+        <defs>
+          <marker id="a3d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--data)"/></marker>
+          <marker id="a3m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--mask)"/></marker>
+          <marker id="a3k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--key)"/></marker>
+        </defs>
+
+        <!-- nhãn lane -->
+        <g font-size="11.5" font-weight="600" fill="var(--muted)" text-anchor="end">
+          <text x="92" y="60">mã hóa</text>
+          <text x="92" y="180">giải mã</text>
+          <text x="92" y="300">mặt nạ</text>
+        </g>
+
+        <!-- lane mã hóa -->
+        <rect x="104" y="36" width="110" height="46" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="159" y="64" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">subd</text>
+        <rect x="262" y="36" width="134" height="46" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.6"/>
+        <text x="329" y="64" font-size="12" fill="currentColor" text-anchor="middle">ShiftRows</text>
+        <rect x="444" y="36" width="146" height="46" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.6"/>
+        <text x="517" y="64" font-size="12" fill="currentColor" text-anchor="middle">MixColumns</text>
+        <circle cx="664" cy="59" r="18" fill="var(--surface)" stroke="var(--key)" stroke-width="1.8"/>
+        <text x="664" y="65" font-size="16" fill="currentColor" text-anchor="middle">⊕</text>
+        <rect x="738" y="36" width="150" height="46" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="813" y="64" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">dstate'</text>
+        <g stroke="var(--data)" stroke-width="1.8" marker-end="url(#a3d)" fill="none">
+          <line x1="216" y1="59" x2="260" y2="59"/><line x1="398" y1="59" x2="442" y2="59"/>
+          <line x1="592" y1="59" x2="644" y2="59"/><line x1="684" y1="59" x2="736" y2="59"/>
+        </g>
+
+        <!-- lane giải mã -->
+        <rect x="104" y="156" width="110" height="46" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="159" y="184" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">subd</text>
+        <circle cx="252" cy="179" r="18" fill="var(--surface)" stroke="var(--key)" stroke-width="1.8"/>
+        <text x="252" y="185" font-size="16" fill="currentColor" text-anchor="middle">⊕</text>
+        <rect x="326" y="156" width="170" height="46" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.6"/>
+        <text x="411" y="184" font-size="12" fill="currentColor" text-anchor="middle">InvMixColumns</text>
+        <rect x="738" y="156" width="150" height="46" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="813" y="184" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">dstate'</text>
+        <g stroke="var(--data)" stroke-width="1.8" marker-end="url(#a3d)" fill="none">
+          <line x1="216" y1="179" x2="232" y2="179"/><line x1="272" y1="179" x2="324" y2="179"/>
+          <line x1="498" y1="179" x2="736" y2="179"/>
+        </g>
+
+        <!-- round key -->
+        <text x="664" y="30" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--key)" text-anchor="middle">round_key</text>
+        <text x="252" y="150" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--key)" text-anchor="middle">round_key</text>
+
+        <!-- lane mặt nạ -->
+        <rect x="104" y="276" width="110" height="46" rx="3" fill="var(--surface)" stroke="var(--mask)" stroke-width="1.8"/>
+        <text x="159" y="304" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">subm</text>
+        <rect x="262" y="276" width="134" height="46" rx="3" fill="var(--surface)" stroke="var(--mask)" stroke-width="1.6"/>
+        <text x="329" y="304" font-size="12" fill="currentColor" text-anchor="middle">ShiftRows</text>
+        <rect x="444" y="276" width="216" height="46" rx="3" fill="var(--surface)" stroke="var(--mask)" stroke-width="1.6"/>
+        <text x="552" y="298" font-size="12" fill="currentColor" text-anchor="middle">MixColumns / InvMixColumns</text>
+        <text x="552" y="314" font-size="10.5" fill="var(--muted)" text-anchor="middle">bản thứ hai, chỉ cho mặt nạ</text>
+        <rect x="738" y="276" width="150" height="46" rx="3" fill="var(--surface)" stroke="var(--mask)" stroke-width="1.8"/>
+        <text x="813" y="304" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor" text-anchor="middle">mstate'</text>
+        <g stroke="var(--mask)" stroke-width="1.8" marker-end="url(#a3m)" fill="none">
+          <line x1="216" y1="299" x2="260" y2="299"/><line x1="398" y1="299" x2="442" y2="299"/>
+          <line x1="662" y1="299" x2="736" y2="299"/>
+        </g>
+
+        <!-- ghi chú -->
+        <rect x="920" y="36" width="218" height="286" rx="3" fill="var(--surface2)" stroke="var(--line)" stroke-width="1.4"/>
+        <text x="938" y="62" font-size="12.5" font-weight="600" fill="currentColor">Ba điều phải nhớ</text>
+        <text x="938" y="90" font-size="11.5" fill="var(--muted)">1. Vòng 14 bỏ cả</text>
+        <text x="938" y="107" font-size="11.5" fill="var(--muted)">MixColumns lẫn</text>
+        <text x="938" y="124" font-size="11.5" fill="var(--muted)">InvMixColumns.</text>
+        <text x="938" y="154" font-size="11.5" fill="var(--muted)">2. round_key chỉ XOR</text>
+        <text x="938" y="171" font-size="11.5" fill="var(--muted)">vào lane dữ liệu —</text>
+        <text x="938" y="188" font-size="11.5" fill="var(--muted)">mặt nạ không đổi.</text>
+        <text x="938" y="218" font-size="11.5" fill="var(--muted)">3. Bất biến giữ suốt:</text>
+        <text x="938" y="240" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--mask)">dstate ^ mstate</text>
+        <text x="938" y="258" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--mask)">= giá trị thật</text>
+        <text x="938" y="286" font-size="11" fill="var(--muted)">Đã kiểm 1000/1000</text>
+        <text x="938" y="303" font-size="11" fill="var(--muted)">trace trong mô phỏng.</text>
+      </svg>
+    </div>
+    <figcaption><b>Mã hóa và giải mã khác nhau ở thứ tự.</b> Mã hóa: ShiftRows → MixColumns → AddRoundKey. Giải mã: AddRoundKey → InvMixColumns. Cùng một lõi, chọn bằng <code>dec</code>.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ HÌNH 4 ============================ -->
+<section>
+  <h2>7. Ngân sách chu kỳ <span class="mono">vẽ đúng tỉ lệ</span></h2>
+  <p>Mỗi phép của bản masked chạy hai lần lõi (phép chính + kiểm tra ngược), nên con số đo được là ~1017 chu kỳ. Phần lớn thời gian không nằm ở 14 vòng AES mà ở chỗ tính lại bảng S-box.</p>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1160 260" role="img" aria-label="So sánh số chu kỳ theo tỉ lệ: bản không mask 32 chu kỳ, một lượt của bản masked khoảng 509 chu kỳ, trong đó 241 chu kỳ dành cho tính bảng S-box">
+        <g font-size="12" fill="var(--muted)" font-family="IBM Plex Mono, monospace">
+          <text x="20" y="54">masked</text>
+          <text x="20" y="72" font-size="10.5">1 lượt</text>
+          <text x="20" y="186">hardened</text>
+          <text x="20" y="204" font-size="10.5">không mask</text>
+        </g>
+
+        <!-- thanh masked: 509 ck, 1.887 px/ck, x 110..1070 -->
+        <rect x="110" y="36" width="32" height="40" fill="var(--rand)" opacity="0.85"/>
+        <rect x="142" y="36" width="455" height="40" fill="var(--mask)" opacity="0.85"/>
+        <rect x="597" y="36" width="4" height="40" fill="var(--data)"/>
+        <rect x="601" y="36" width="449" height="40" fill="var(--data)" opacity="0.85"/>
+        <rect x="1050" y="36" width="8" height="40" fill="currentColor" opacity="0.5"/>
+        <rect x="110" y="36" width="948" height="40" fill="none" stroke="currentColor" stroke-width="1.2"/>
+
+        <g font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="middle">
+          <text x="126" y="100" fill="var(--rand)">RMASK</text>
+          <text x="126" y="114" fill="var(--muted)">17</text>
+          <text x="369" y="100" fill="var(--mask)">TWAIT — tính bảng S-box</text>
+          <text x="369" y="114" fill="var(--muted)">241 chu kỳ</text>
+          <text x="825" y="100" fill="var(--data)">14 vòng × (SUB 16 + LIN 1)</text>
+          <text x="825" y="114" fill="var(--muted)">238 chu kỳ</text>
+        </g>
+        <text x="1070" y="62" font-size="11.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)" text-anchor="start">≈509</text>
+
+        <!-- thanh hardened: 32 ck -->
+        <rect x="110" y="168" width="60" height="40" fill="var(--data)" opacity="0.85"/>
+        <rect x="110" y="168" width="60" height="40" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="182" y="194" font-size="11.5" font-family="IBM Plex Mono, monospace" fill="var(--muted)" text-anchor="start">32 chu kỳ — nhanh hơn 16 lần, không chống được DPA</text>
+
+        <text x="110" y="240" font-size="11.5" fill="var(--muted)">Với VERIFY_EN = 1, lõi chạy hai lượt → tổng ≈ 1017 chu kỳ, tức ~10 µs ở 100 MHz.</text>
+      </svg>
+    </div>
+    <figcaption><b>Chỗ đáng tối ưu nếu cần nhanh hơn:</b> 241 chu kỳ tính bảng chiếm gần một nửa. Giữ nguyên bảng qua nhiều block cùng khóa sẽ nhanh hơn nhiều, nhưng mặt nạ khi đó không còn đổi mỗi lần mã hóa — mất đúng cái tính chất làm masking có tác dụng. Đừng làm.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ HÌNH 5 ============================ -->
+<section>
+  <h2>8. Bản không mask <span class="mono">aes256_enc_dec_top</span></h2>
+  <p>Cấu trúc đơn giản hơn hẳn: hai lõi riêng cho mã hóa và giải mã, dùng chung một key expansion. Đọc bản này trước rồi sang bản masked sẽ dễ hơn.</p>
+  <figure>
+    <div class="scroll">
+      <svg viewBox="0 0 1160 420" role="img" aria-label="Sơ đồ aes256_enc_dec_top: controller, một key expansion dùng chung, lõi mã hóa và lõi giải mã riêng">
+        <defs>
+          <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker>
+          <marker id="a5k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--key)"/></marker>
+          <marker id="a5d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--data)"/></marker>
+        </defs>
+
+        <rect x="150" y="40" width="800" height="98" rx="3" fill="var(--surface2)" stroke="currentColor" stroke-width="1.8"/>
+        <text x="168" y="66" font-size="14" font-weight="600" fill="currentColor">Controller FSM</text>
+        <text x="298" y="66" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--muted)">Aes256_ENC_DEC_top.v</text>
+        <text x="168" y="94" font-family="IBM Plex Mono, monospace" font-size="12" fill="currentColor">S_IDLE → S_KEXP → S_RUN1 → S_RUN2 → S_WIPE</text>
+        <text x="168" y="118" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">chốt input · busy-lock · verify ngược · watchdog · zeroize</text>
+
+        <rect x="186" y="214" width="240" height="96" rx="3" fill="var(--surface)" stroke="var(--key)" stroke-width="1.8"/>
+        <text x="306" y="240" font-size="12.5" font-weight="600" fill="currentColor" text-anchor="middle">Aes256_key_expansion_FSM</text>
+        <text x="306" y="262" font-size="11" fill="var(--muted)" text-anchor="middle">một khối, dùng chung</text>
+        <text x="306" y="282" font-size="11" fill="var(--muted)" text-anchor="middle">cho cả hai chiều</text>
+        <text x="306" y="300" font-size="11" fill="var(--muted)" text-anchor="middle">tiết kiệm ~1920 FF</text>
+
+        <rect x="620" y="186" width="300" height="78" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="770" y="212" font-size="12.5" font-weight="600" fill="currentColor" text-anchor="middle">Aes_data_FSM</text>
+        <text x="770" y="234" font-size="11" fill="var(--muted)" text-anchor="middle">SubBytes → ShiftRows → MixColumns</text>
+        <text x="770" y="252" font-size="11" fill="var(--muted)" text-anchor="middle">16 S-box song song, 1 vòng / chu kỳ</text>
+
+        <rect x="620" y="294" width="300" height="78" rx="3" fill="var(--surface)" stroke="var(--data)" stroke-width="1.8"/>
+        <text x="770" y="320" font-size="12.5" font-weight="600" fill="currentColor" text-anchor="middle">aes256_data_dec_fsm</text>
+        <text x="770" y="342" font-size="11" fill="var(--muted)" text-anchor="middle">InvShiftRows → InvSubBytes → InvMixColumns</text>
+        <text x="770" y="360" font-size="11" fill="var(--muted)" text-anchor="middle">cả hai đều có đếm vòng kép</text>
+
+        <line x1="306" y1="140" x2="306" y2="212" stroke="currentColor" stroke-width="1.6" marker-end="url(#a5)"/>
+        <text x="314" y="178" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">ke_mode · clear</text>
+
+        <polyline points="428,246 540,246 540,212 618,212" fill="none" stroke="var(--key)" stroke-width="2" marker-end="url(#a5k)"/>
+        <polyline points="540,246 540,330 618,330" fill="none" stroke="var(--key)" stroke-width="2" marker-end="url(#a5k)"/>
+        <text x="482" y="238" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--key)" text-anchor="middle">round_key</text>
+
+        <line x1="770" y1="184" x2="770" y2="140" stroke="var(--data)" stroke-width="1.8" marker-end="url(#a5d)"/>
+        <text x="780" y="166" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--data)">ciphertext · done · fault</text>
+
+        <text x="150" y="404" font-family="IBM Plex Mono, monospace" font-size="11.5" fill="var(--muted)">Lõi nào đang chạy thì lõi đó cầm round_num — controller đảo chỉ số 14−n khi giải mã.</text>
+      </svg>
+    </div>
+    <figcaption><b>Khác biệt lớn nhất so với bản masked:</b> ở đây 16 S-box chạy song song trong một chu kỳ, nên một vòng AES mất đúng 1 chu kỳ. Bản masked đổi sang tra tuần tự 16 chu kỳ để có chỗ chèn shuffling và dùng chung một bảng đã mask.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ BẢNG FILE ============================ -->
+<section>
+  <h2>Bản đồ file</h2>
+  <p>Tất cả nằm trong <code>Aes_system.srcs/sources_1/new/</code>, testbench trong <code>sim_1/new/</code>.</p>
+  <div class="tscroll">
+    <table>
+      <thead><tr><th>File</th><th>Vai trò</th><th>Thuộc top nào</th></tr></thead>
+      <tbody>
+        <tr><td class="f">Aes256_ENC_DEC_top.v</td><td>Controller bản hardened: chốt input, busy-lock, verify ngược, watchdog, zeroize</td><td>không mask</td></tr>
+        <tr><td class="f">Aes_data_FSM.v</td><td>Lõi mã hóa, 16 S-box song song, đếm vòng kép</td><td>không mask</td></tr>
+        <tr><td class="f">aes256_data_dec_fsm.v</td><td>Lõi giải mã, đếm vòng kép</td><td>không mask</td></tr>
+        <tr><td class="f">Aes256_masked_top.v</td><td>Controller bản masked, thêm chân <code>seed_en</code> / <code>seed_in</code></td><td>masked</td></tr>
+        <tr><td class="f">aes_masked_core.v</td><td>Lõi masked hai chiều: bất biến mask, shuffling, đếm vòng kép</td><td>masked</td></tr>
+        <tr><td class="f">aes_masked_sbox.v</td><td>Bảng S-box tính lại với mặt nạ, RAM 256×8</td><td>masked</td></tr>
+        <tr><td class="f">aes_prng.v</td><td>Nguồn mặt nạ — phải thay bằng TRNG khi dùng thật</td><td>masked</td></tr>
+        <tr><td class="f">Aes256_key_expansion_FSM.v</td><td>Sinh 15 round key, có cổng <code>clear</code> để zeroize</td><td>cả hai</td></tr>
+        <tr><td class="f">Aes_Sbox.v · aes_inv_sbox.v</td><td>Bảng S-box thuận và nghịch, đã kiểm đủ 256 mục</td><td>cả hai</td></tr>
+        <tr><td class="f">Aes_shift_rows.v · aes_inv_shift_rows.v</td><td>Hoán vị byte, thuần nối dây</td><td>cả hai</td></tr>
+        <tr><td class="f">Aes_mix_columns.v · aes_inv_mix_columns.v</td><td>Nhân ma trận trên GF(2⁸); bản masked dùng hai thực thể mỗi loại</td><td>cả hai</td></tr>
+        <tr><td class="f">AES_SECURE_TB.v</td><td>Testbench bản hardened: NIST + 9 kịch bản tấn công</td><td>sim</td></tr>
+        <tr><td class="f">AES_MASKED_TB.v</td><td>Testbench bản masked: thêm phần kiểm tra bất biến mask</td><td>sim</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="note"><b>Trước khi synthesis:</b> project có nhiều module top ứng viên, phải set top tường minh trong Vivado chứ đừng để nó tự chọn. Và nếu <code>seed_en</code> để treo 0 thì dãy mặt nạ lặp lại y nguyên mỗi lần bật nguồn — khi đó cả ba lớp chống DPA trong hình 2 và 3 đều vô nghĩa.</div>
+
+</div>
