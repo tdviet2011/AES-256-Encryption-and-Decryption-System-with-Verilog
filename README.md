@@ -212,6 +212,23 @@ sim_top   AES_MASKED_TB
 
 The project must have its top set **explicitly**. With `TopAutoSet` left on and four candidate tops present, Vivado will pick one for you and it will be the wrong one.
 
+### Throughput and accuracy
+
+![AES-256 throughput and accuracy vs number of blocks encrypted](docs/images/aes_throughput_chart.png)
+
+Estimated throughput for each top module as the number of encrypted blocks scales from 1 to 10 million, computed from the measured cycles/block in the table above (`scripts/matlab/aes_throughput_chart.m`). The shaded band around each line is **not measured variance** — it spans the throughput you'd get at 50 MHz vs 200 MHz post-synthesis clock, since this repository has not been synthesized against a specific FPGA target yet. The accuracy line is flat at 100% because AES is deterministic: a given key/plaintext pair always produces the same correct output, independent of how many blocks are processed, which is exactly what the 440/440 results above confirm.
+
+![AES-256 accuracy and attack-detection rate by scenario](docs/images/aes_accuracy_chart.png)
+
+The same verification results broken down differently (`scripts/matlab/aes_accuracy_chart.m`): overall encrypt/decrypt accuracy (440/440 against NIST vectors and random key/plaintext pairs) on the left, and detection rate per attack scenario on the right. The scenario-C count (45 cases) is read directly from the testbench; the other scenarios' per-case counts are illustrative, since `AES_SECURE_TB` logs an aggregate "0 errors" rather than a per-scenario count — see the script's comments.
+
+To regenerate either chart:
+
+```matlab
+run('scripts/matlab/aes_throughput_chart.m')
+run('scripts/matlab/aes_accuracy_chart.m')
+```
+
 ---
 
 ## Repository layout
